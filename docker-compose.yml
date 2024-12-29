@@ -1,0 +1,26 @@
+services:
+  simple-http-server:
+    container_name: "simple-http-server"
+    image: registry.gitlab.com/devopsrt71/container-images/golang.1.22.8-arm64
+    command: ["sleep", "infinity"]
+    ports:
+      - 80:80
+    volumes:
+      - /Users/rogeriotadim/git-projects/github/rogeriotadim/pos-goexpert/simple-http-server:/go/src
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.41
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 14268:14268
+      - 4318:4318
+      - 14250:14250
+      - 9411:9411
