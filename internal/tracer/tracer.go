@@ -3,9 +3,11 @@ package tracer
 import (
 	"context"
 	"log"
+	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -13,11 +15,17 @@ import (
 
 func InitTracer() func() {
 	ctx := context.Background()
-	exporter, err := otlptracehttp.New(
+	exporter := os.Getenv("exporter")
+
+	exporterJaeger, err := otlptracehttp.New(
 		ctx,
 		otlptracehttp.WithEndpoint("jaeger:4318"),
 		otlptracehttp.WithInsecure(),
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	exporterPretty, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,10 +35,21 @@ func InitTracer() func() {
 		semconv.ServiceNameKey.String("simple-http-server"),
 	)
 
-	traceProvider := trace.NewTracerProvider(
-		trace.WithBatcher(exporter),
-		trace.WithResource(resources),
-	)
+	var traceProvider *trace.TracerProvider
+
+	if exporter == "jaeger" {
+		traceProvider = trace.NewTracerProvider(
+			trace.WithBatcher(exporterJaeger),
+			trace.WithResource(resources),
+		)
+
+	} else {
+
+		traceProvider = trace.NewTracerProvider(
+			trace.WithBatcher(exporterPretty),
+			trace.WithResource(resources),
+		)
+	}
 
 	otel.SetTracerProvider(traceProvider)
 

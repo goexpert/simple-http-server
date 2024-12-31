@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/goexpert/simple-http-server/internal/tracer"
 	"go.opentelemetry.io/otel"
@@ -25,8 +26,12 @@ func (s *Server) Healthz(w http.ResponseWriter, r *http.Request) {
 	cleanup := tracer.InitTracer()
 	defer cleanup()
 
-	_, span := oTracer.Start(context.Background(), "Healthz")
+	ctx, span := oTracer.Start(context.Background(), "Healthz")
 	defer span.End()
+
+	time.Sleep(time.Second * 1)
+
+	sleep2(ctx)
 
 	log.Println("Healthz", r.RemoteAddr, r.RequestURI)
 	resp := make(map[string]string)
@@ -38,4 +43,13 @@ func (s *Server) Healthz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = w.Write(jsonResp)
+}
+
+func sleep2(ctx context.Context) {
+
+	_, span := oTracer.Start(ctx, "sleep2")
+	defer span.End()
+
+	time.Sleep(time.Second * 2)
+
 }
